@@ -9,7 +9,7 @@ const Auth = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-5xl font-bold text-foreground">Let's Enjoy●</h1>
+          <h1 className="text-5xl font-bold text-foreground">Get Started</h1>
         </div>
 
         <div className="space-y-4">

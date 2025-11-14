@@ -91,7 +91,7 @@ const VerifyReset = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center gap-2 sm:gap-3">
             {code.map((digit, index) => (
               <input
                 key={index}
@@ -102,7 +102,7 @@ const VerifyReset = () => {
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 className={cn(
-                  "w-14 h-14 text-center text-2xl font-semibold rounded-2xl border-2 transition-all",
+                  "w-12 h-12 sm:w-14 sm:h-14 text-center text-xl sm:text-2xl font-semibold rounded-xl sm:rounded-2xl border-2 transition-all",
                   "focus:outline-none focus:ring-2 focus:ring-ring",
                   isValid === true && "border-input-valid bg-success/10 text-success",
                   isValid === false && "border-input-invalid bg-destructive/10 text-destructive animate-shake",
