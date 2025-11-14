@@ -30,6 +30,9 @@ const VerifyEmail = () => {
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) return;
     
+    // Only accept numeric digits
+    if (value && !/^\d$/.test(value)) return;
+    
     const newCode = [...code];
     newCode[index] = value;
     setCode(newCode);
@@ -97,6 +100,8 @@ const VerifyEmail = () => {
                 key={index}
                 ref={(el) => (inputRefs.current[index] = el)}
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]"
                 maxLength={1}
                 value={digit}
                 onChange={(e) => handleChange(index, e.target.value)}
