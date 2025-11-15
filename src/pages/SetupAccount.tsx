@@ -56,7 +56,7 @@ const SetupAccount = () => {
   const handleSubmit = () => {
     if (usernameValid && password.length >= 8 && password === confirmPassword && agreedToTerms) {
       console.log("Account setup complete");
-      navigate("/");
+      navigate("/home");
     }
   };
 

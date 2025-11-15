@@ -30,10 +30,10 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/setup-account" element={<SetupAccount />} />
+          <Route path="/home" element={<Index />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-reset" element={<VerifyReset />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/home" element={<Index />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
