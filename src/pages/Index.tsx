@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Plus, ImagePlus, Sparkles, Loader2, Menu } from "lucide-react";
+import { Send, Plus, ImagePlus, Sparkles, Loader2, X, Palette, Maximize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import StyleSelector from "@/components/image-gen/StyleSelector";
 import SizeSelector from "@/components/image-gen/SizeSelector";
 import ImageResult from "@/components/image-gen/ImageResult";
-import ChatMenu from "@/components/image-gen/ChatMenu";
+import ChatHeader from "@/components/image-gen/ChatHeader";
+import ConversationSidebar from "@/components/image-gen/ConversationSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { GeneratedImage } from "@/types/image";
 
@@ -21,7 +23,8 @@ const Index = () => {
   const [showSizeSelector, setShowSizeSelector] = useState(false);
   const [showPlusMenu, setShowPlusMenu] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
-  const [showChatMenu, setShowChatMenu] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string>("1");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -121,177 +124,186 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border/40 px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">AI Image Generator</h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowChatMenu(true)}
-        >
-          <Menu className="w-5 h-5" />
-        </Button>
-      </header>
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+      <div className="min-h-screen flex w-full bg-background">
+        {/* Sidebar */}
+        <ConversationSidebar
+          currentConversationId={currentConversationId}
+          onConversationSelect={setCurrentConversationId}
+          onNewChat={clearChat}
+        />
 
-      {/* Main content area */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
-        {generatedImages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="text-xl font-semibold">Create Your First Image</h2>
-              <p className="text-muted-foreground max-w-sm">
-                Describe what you want to see and our AI will bring it to life
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {generatedImages.map((image) => (
-              <ImageResult
-                key={image.id}
-                image={image}
-                onRegenerate={() => {
-                  setPrompt(image.prompt);
-                  handleGenerate();
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col">
+          <ChatHeader
+            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            onNewChat={clearChat}
+            onClearChat={clearChat}
+            conversationTitle="New Chat"
+          />
 
-      {/* Input area */}
-      <div className="border-t border-border/40 p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        {/* Selected items display */}
-        {(selectedStyle || referenceImage) && (
-          <div className="mb-3 flex gap-2 flex-wrap">
-            {selectedStyle && (
-              <div className="relative inline-flex items-center gap-2 bg-muted px-3 py-1.5 rounded-lg">
-                <img
-                  src={selectedStyle.image}
-                  alt={selectedStyle.name}
-                  className="w-8 h-8 rounded object-cover"
-                />
-                <span className="text-sm">{selectedStyle.name}</span>
-                <button
-                  onClick={() => setSelectedStyle(null)}
-                  className="ml-1 text-muted-foreground hover:text-foreground"
-                >
-                  ×
-                </button>
+          {/* Chat Area */}
+          <div className="flex-1 overflow-y-auto">
+            {generatedImages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <Sparkles className="h-8 w-8 text-primary" />
+                </div>
+                <h2 className="text-2xl font-semibold mb-2 text-foreground">
+                  Create Amazing Images
+                </h2>
+                <p className="text-muted-foreground max-w-md">
+                  Describe what you want to create, choose a style, and let AI bring your imagination to life
+                </p>
               </div>
-            )}
-            {referenceImage && (
-              <div className="relative inline-flex items-center gap-2 bg-muted px-3 py-1.5 rounded-lg">
-                <img
-                  src={referenceImage}
-                  alt="Reference"
-                  className="w-8 h-8 rounded object-cover"
-                />
-                <span className="text-sm">Reference Image</span>
-                <button
-                  onClick={() => setReferenceImage(null)}
-                  className="ml-1 text-muted-foreground hover:text-foreground"
-                >
-                  ×
-                </button>
+            ) : (
+              <div className="p-4 space-y-6">
+                {generatedImages.map((image) => (
+                  <ImageResult 
+                    key={image.id} 
+                    image={image} 
+                    onRegenerate={() => {
+                      setPrompt(image.prompt);
+                      handleGenerate();
+                    }} 
+                  />
+                ))}
               </div>
             )}
           </div>
-        )}
 
-        {/* Input row */}
-        <div className="flex gap-2 items-end">
-          <div className="flex-1 relative">
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe the image you want to create..."
-              className="min-h-[52px] max-h-32 resize-none pr-24"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleGenerate();
-                }
-              }}
-            />
-            <div className="absolute right-2 bottom-2 flex gap-1">
+          {/* Input Area */}
+          <div className="border-t border-border bg-background p-4">
+            {/* Style and Image Preview */}
+            {(selectedStyle || referenceImage) && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {selectedStyle && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm">
+                    <Palette className="h-4 w-4" />
+                    <span>{selectedStyle.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 p-0 hover:bg-transparent"
+                      onClick={() => setSelectedStyle(null)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+                
+                {referenceImage && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm">
+                    <ImagePlus className="h-4 w-4" />
+                    <span>Reference Image</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 p-0 hover:bg-transparent"
+                      onClick={() => setReferenceImage(null)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Describe the image you want to create..."
+                  className="min-h-[52px] max-h-32 resize-none pr-24"
+                  disabled={isGenerating}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleGenerate();
+                    }
+                  }}
+                />
+                
+                {/* Plus Menu Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-12 bottom-2 h-8 w-8"
+                  onClick={() => setShowPlusMenu(!showPlusMenu)}
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+
+                {/* Image Upload Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 bottom-2 h-8 w-8"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isGenerating}
+                >
+                  <ImagePlus className="h-5 w-5" />
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+              </div>
+
               <Button
-                variant="ghost"
+                onClick={handleGenerate}
+                disabled={isGenerating || !prompt.trim()}
                 size="icon"
-                className="h-8 w-8"
-                onClick={() => setShowPlusMenu(!showPlusMenu)}
+                className="h-[52px] w-[52px] rounded-full"
               >
-                <Plus className="w-4 h-4" />
-              </Button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-                accept="image/*"
-                className="hidden"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <ImagePlus className="w-4 h-4" />
+                {getSendIcon()}
               </Button>
             </div>
+
+            {/* Plus Menu Popup */}
+            {showPlusMenu && (
+              <div className="absolute bottom-20 right-6 bg-card border border-border rounded-lg shadow-lg p-2 space-y-1 z-50">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setShowStyleSelector(true);
+                    setShowPlusMenu(false);
+                  }}
+                >
+                  <Palette className="mr-2 h-4 w-4" />
+                  Style
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    setShowSizeSelector(true);
+                    setShowPlusMenu(false);
+                  }}
+                >
+                  <Maximize2 className="mr-2 h-4 w-4" />
+                  Size & Count
+                </Button>
+              </div>
+            )}
           </div>
-          <Button
-            onClick={handleGenerate}
-            disabled={isGenerating || !prompt.trim()}
-            className="h-[52px] w-[52px]"
-            size="icon"
-          >
-            {getSendIcon()}
-          </Button>
         </div>
-
-        {/* Plus menu dropdown */}
-        {showPlusMenu && (
-          <div className="mt-2 p-2 bg-muted rounded-lg space-y-1">
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={() => {
-                setShowStyleSelector(true);
-                setShowPlusMenu(false);
-              }}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Select Style
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={() => {
-                setShowSizeSelector(true);
-                setShowPlusMenu(false);
-              }}
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2"/>
-              </svg>
-              Image Size & Count
-            </Button>
-          </div>
-        )}
       </div>
 
-      {/* Modals */}
+      {/* Dialogs */}
       <StyleSelector
         open={showStyleSelector}
         onOpenChange={setShowStyleSelector}
         selectedStyle={selectedStyle}
-        onStyleSelect={setSelectedStyle}
+        onStyleSelect={(style) => {
+          setSelectedStyle(style);
+          setShowStyleSelector(false);
+        }}
       />
 
       <SizeSelector
@@ -302,13 +314,7 @@ const Index = () => {
         imageCount={imageCount}
         onCountChange={setImageCount}
       />
-
-      <ChatMenu
-        open={showChatMenu}
-        onOpenChange={setShowChatMenu}
-        onClearChat={clearChat}
-      />
-    </div>
+    </SidebarProvider>
   );
 };
 
