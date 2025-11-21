@@ -1,9 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { Menu, MoreVertical, PenLine } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Settings, MoreVertical, LogOut, Eraser, Flag } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,52 +21,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 
 interface ChatHeaderProps {
-  onToggleSidebar: () => void;
-  onNewChat: () => void;
   onClearChat: () => void;
-  conversationTitle?: string;
 }
 
-const ChatHeader = ({ onToggleSidebar, onNewChat, onClearChat, conversationTitle = "New Chat" }: ChatHeaderProps) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+const ChatHeader = ({ onClearChat }: ChatHeaderProps) => {
+  const [showClearDialog, setShowClearDialog] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
-  const [editTitle, setEditTitle] = useState(conversationTitle);
+  const [reportReason, setReportReason] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleEditTitle = () => {
-    setEditTitle(conversationTitle);
-    setShowEditDialog(true);
-    setShowMenu(false);
-  };
-
-  const handleDeleteChat = () => {
-    setShowDeleteDialog(true);
-    setShowMenu(false);
+  const handleClearChat = () => {
+    setShowClearDialog(true);
   };
 
   const handleReportChat = () => {
     setShowReportDialog(true);
-    setShowMenu(false);
   };
 
-  const confirmEdit = () => {
-    toast({
-      title: "Title updated",
-      description: "Conversation title has been updated successfully",
-    });
-    setShowEditDialog(false);
-  };
-
-  const confirmDelete = () => {
+  const confirmClear = () => {
     onClearChat();
-    setShowDeleteDialog(false);
+    setShowClearDialog(false);
     toast({
-      title: "Chat deleted",
-      description: "Conversation has been deleted",
+      title: "Chat cleared",
+      description: "All messages have been removed",
     });
   };
 
@@ -68,116 +56,70 @@ const ChatHeader = ({ onToggleSidebar, onNewChat, onClearChat, conversationTitle
       title: "Report submitted",
       description: "Thank you for your feedback",
     });
+    setReportReason("");
     setShowReportDialog(false);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
   };
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onToggleSidebar}
-              className="h-10 w-10 rounded-full"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onNewChat}
-              className="h-10 w-10 rounded-full"
-            >
-              <PenLine className="h-5 w-5" />
-            </Button>
-          </div>
+      <header className="flex items-center justify-between p-4">
+        {/* Settings Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/settings")}
+          className="h-14 w-14 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20 shadow-lg hover:shadow-xl transition-all duration-300"
+        >
+          <Settings className="h-6 w-6" />
+        </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowMenu(true)}
-            className="h-10 w-10 rounded-full"
-          >
-            <MoreVertical className="h-5 w-5" />
-          </Button>
-        </div>
+        {/* Menu Button */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-14 w-14 rounded-full bg-gradient-to-br from-accent/10 to-primary/10 hover:from-accent/20 hover:to-primary/20 shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <MoreVertical className="h-6 w-6" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={handleClearChat}>
+              <Eraser className="mr-2 h-4 w-4" />
+              Clear Chat
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleReportChat}>
+              <Flag className="mr-2 h-4 w-4" />
+              Report Chat
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
-      {/* Chat Options Menu */}
-      <Dialog open={showMenu} onOpenChange={setShowMenu}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Chat Options</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-2">
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={handleEditTitle}
-            >
-              <PenLine className="mr-2 h-4 w-4" />
-              Edit Chat Name
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={handleDeleteChat}
-            >
-              <Menu className="mr-2 h-4 w-4" />
-              Delete Chat
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={handleReportChat}
-            >
-              <MoreVertical className="mr-2 h-4 w-4" />
-              Report
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Title Dialog */}
-      <AlertDialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+      {/* Clear Chat Dialog */}
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Edit Chat Name</AlertDialogTitle>
+            <AlertDialogTitle>Clear Chat</AlertDialogTitle>
             <AlertDialogDescription>
-              <Input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Enter chat name"
-                className="mt-4"
-              />
+              Are you sure you want to clear this chat? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmEdit}>
-              Save
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Chat</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this chat? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+            <AlertDialogAction onClick={confirmClear} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Clear
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -190,14 +132,16 @@ const ChatHeader = ({ onToggleSidebar, onNewChat, onClearChat, conversationTitle
             <AlertDialogTitle>Report Chat</AlertDialogTitle>
             <AlertDialogDescription>
               Please describe the issue you're experiencing with this chat.
-              <Input
-                placeholder="Describe the issue..."
-                className="mt-4"
-              />
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <Input
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            placeholder="Describe the issue..."
+            className="mt-4"
+          />
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setReportReason("")}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmReport}>
               Submit Report
             </AlertDialogAction>
