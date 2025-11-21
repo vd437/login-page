@@ -6,6 +6,7 @@ import { GeneratedImage } from "@/types/image";
 import ImageViewer from "./ImageViewer";
 import ReportDialog from "./ReportDialog";
 import LoadingOverlay from "./LoadingOverlay";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageResultProps {
   image: GeneratedImage;
@@ -17,6 +18,7 @@ const ImageResult = ({ image, onRegenerate }: ImageResultProps) => {
   const [showReport, setShowReport] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const { toast } = useToast();
 
   useState(() => {
     const interval = setInterval(() => {
@@ -32,6 +34,14 @@ const ImageResult = ({ image, onRegenerate }: ImageResultProps) => {
 
     return () => clearInterval(interval);
   });
+
+  const handleRegenerate = () => {
+    toast({
+      title: "Rebuilding in progress",
+      description: "Creating a new version of your image...",
+    });
+    onRegenerate();
+  };
 
   const handleDownload = async () => {
     try {
@@ -65,7 +75,7 @@ const ImageResult = ({ image, onRegenerate }: ImageResultProps) => {
               <Download className="mr-2 h-4 w-4" />
               Download
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onRegenerate}>
+            <DropdownMenuItem onClick={handleRegenerate}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Recreate
             </DropdownMenuItem>
